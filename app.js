@@ -8,12 +8,13 @@ import {
 
 /** 1) REMPLIS ICI avec ton config Firebase (Console → Project settings → Web app) */
 const firebaseConfig = {
-  apiKey: "REPLACE_ME",
-  authDomain: "REPLACE_ME",
-  projectId: "REPLACE_ME",
-  storageBucket: "REPLACE_ME",
-  messagingSenderId: "REPLACE_ME",
-  appId: "REPLACE_ME",
+  apiKey: "AIzaSyAJMeGn_wpe0igrHECsUvrd_5Lg8t3qGzM",
+  authDomain: "loup-garou-2c46f.firebaseapp.com",
+  projectId: "loup-garou-2c46f",
+  storageBucket: "loup-garou-2c46f.firebasestorage.app",
+  messagingSenderId: "87830904941",
+  appId: "1:87830904941:web:15f8a483bb668e1e583f64",
+  measurementId: "G-D17L1TC7EW"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -859,4 +860,5 @@ onAuthStateChanged(auth, (user)=>{
   if(!user) return;
   uid = user.uid;
   connPill.textContent = "Connecté";
+
 });
