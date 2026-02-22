@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Jeu des Professeurs — Loup-garou (école)</title>
+  <style>
+    :root{--bg:#0b1020;--card:#121a33;--text:#eaf0ff;--muted:#a8b3d6;--acc:#6ea8fe;--bad:#ff6b6b;--ok:#4ade80;}
+    *{box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    body{margin:0;background:var(--bg);color:var(--text);}
+    header{padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;gap:12px;align-items:center;justify-content:space-between}
+    header h1{font-size:16px;margin:0;color:var(--text);opacity:.95}
+    .wrap{padding:16px;max-width:1100px;margin:0 auto;}
+    .grid{display:grid;grid-template-columns: 1fr 1fr; gap:12px;}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    input,select,button{border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--text);padding:10px 12px}
+    button{cursor:pointer}
+    button.primary{background:var(--acc);border-color:transparent;color:#081028;font-weight:700}
+    button.danger{background:rgba(255,107,107,.18);border-color:rgba(255,107,107,.35);color:var(--text)}
+    .muted{color:var(--muted);font-size:13px}
+    .pill{padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);color:var(--muted);font-size:12px}
+    .hidden{display:none}
+    .gameLayout{display:grid;grid-template-columns: 280px 1fr 340px; gap:12px; margin-top:12px;}
+    ul{margin:8px 0 0 0;padding:0;list-style:none}
+    li{padding:8px 10px;border:1px solid rgba(255,255,255,.08);border-radius:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    .alive{color:var(--ok)}
+    .dead{color:var(--bad)}
+    .log{max-height:360px;overflow:auto;padding-right:6px}
+    .log p{margin:8px 0;padding:10px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px}
+    .big{font-size:18px;font-weight:800}
+    .roleBox{border:1px dashed rgba(255,255,255,.18);border-radius:16px;padding:12px}
+    .kpi{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+    .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    @media (max-width: 980px){
+      .gameLayout{grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>🧑‍🏫 Jeu des Professeurs (version web) — FR</h1>
+  <div class="row">
+    <span id="connPill" class="pill">Connexion…</span>
+    <span id="phasePill" class="pill">Phase: —</span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="grid" id="setupGrid">
+    <div class="card">
+      <div class="big">1) Ton pseudo</div>
+      <p class="muted">Utilise un pseudo (pas besoin d’email). Ton compte est anonyme.</p>
+      <div class="row">
+        <input id="pseudo" placeholder="Ex: Naori" />
+        <button id="savePseudo" class="primary">Enregistrer</button>
+      </div>
+      <p class="muted" id="pseudoInfo"></p>
+    </div>
+
+    <div class="card">
+      <div class="big">2) Créer / rejoindre une partie</div>
+      <div class="two">
+        <div class="card" style="padding:12px;border-radius:14px;background:rgba(255,255,255,.03)">
+          <div class="row">
+            <input type="checkbox" id="mjMode" checked />
+            <label for="mjMode" class="muted">Je suis Maître du jeu (recommandé)</label>
+          </div>
+          <button id="createGame" class="primary" style="width:100%;margin-top:8px">Créer une partie</button>
+          <p class="muted">Tu obtiens un code à partager.</p>
+          <div class="row">
+            <span class="pill">Code: <span id="createdCode" class="mono">—</span></span>
+            <button id="copyCode">Copier</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px;border-radius:14px;background:rgba(255,255,255,.03)">
+          <input id="joinCode" class="mono" placeholder="CODE (ex: A7K2QZ)" />
+          <button id="joinGameBtn" class="primary" style="width:100%;margin-top:8px">Rejoindre</button>
+          <p class="muted">Les joueurs rejoignent avec le même code.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="gameUI" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <div class="big">Salle: <span id="roomCode" class="mono">—</span></div>
+          <div class="kpi">
+            <span class="pill">Toi: <span id="meName">—</span></span>
+            <span class="pill">Rôle: <span id="meRole">—</span></span>
+            <span class="pill">Statut: <span id="meAlive">—</span></span>
+            <span class="pill">MJ: <span id="mjName">—</span></span>
+          </div>
+        </div>
+        <div class="row">
+          <button id="leaveBtn" class="danger">Quitter</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="gameLayout">
+      <div class="card">
+        <div class="big">Joueurs</div>
+        <p class="muted">Vert = vivant, Rouge = éliminé</p>
+        <ul id="playersList"></ul>
+      </div>
+
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:flex-end">
+          <div>
+            <div class="big">Journal de partie</div>
+            <div class="muted">Tout le monde voit ça (utile pour suivre).</div>
+          </div>
+          <button id="scrollLog">Bas</button>
+        </div>
+        <div id="log" class="log"></div>
+      </div>
+
+      <div class="card">
+        <div class="big">Ton panneau</div>
+
+        <div class="roleBox" style="margin-top:10px">
+          <div class="muted">Ta carte</div>
+          <div id="roleCard" style="margin-top:6px">—</div>
+        </div>
+
+        <div id="actionsBox" style="margin-top:12px">
+          <div class="big" style="font-size:15px">Actions</div>
+          <p class="muted">Les actions apparaissent selon la phase (Nuit/Jour) et ton rôle.</p>
+
+          <div id="actionUI" class="hidden">
+            <select id="targetSelect" style="width:100%"></select>
+            <button id="doAction" class="primary" style="width:100%;margin-top:8px">Valider l’action</button>
+            <p class="muted" id="actionHint"></p>
+          </div>
+
+          <div id="voteUI" class="hidden">
+            <select id="voteSelect" style="width:100%"></select>
+            <button id="doVote" class="primary" style="width:100%;margin-top:8px">Voter</button>
+            <p class="muted" id="voteHint"></p>
+          </div>
+        </div>
+
+        <div style="margin-top:12px">
+          <div class="big" style="font-size:15px">Messages privés</div>
+          <div class="muted">Résultats d’enquête (CDI) / info du Secrétaire (après exécution).</div>
+          <div id="pmBox"></div>
+        </div>
+
+        <div id="hostPanel" class="hidden" style="margin-top:14px">
+          <hr style="border:0;border-top:1px solid rgba(255,255,255,.1);margin:12px 0">
+          <div class="big">Panneau MJ</div>
+          <p class="muted">Tu contrôles le rythme : démarrer, résoudre la nuit, résoudre les votes.</p>
+
+          <div class="row">
+            <button id="startBtn" class="primary">Démarrer</button>
+            <button id="nightResolveBtn">Résoudre la nuit</button>
+            <button id="voteResolveBtn">Résoudre le vote</button>
+            <button id="endBtn" class="danger">Fin</button>
+          </div>
+          <p class="muted" id="hostInfo"></p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script type="module" src="./app.js"></script>
+</body>
+</html>
